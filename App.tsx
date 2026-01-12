@@ -76,12 +76,11 @@ const App: React.FC = () => {
     }
   };
 
-  const clearResults = () => {
-    if (window.confirm("Confirm global database purge? All local intelligence will be lost.")) {
-      setAllJobs([]);
-      setAllSources([]);
-      addLog("Memory scrubbed. Database reset complete.", "info");
-    }
+  const clearAllData = () => {
+    // Immediate state reset for better UX
+    setAllJobs([]);
+    setAllSources([]);
+    addLog("Memory scrubbed. Database reset complete.", "info");
   };
 
   const exportToExcel = () => {
@@ -139,6 +138,14 @@ const App: React.FC = () => {
           <div className="flex items-center gap-3">
             {allJobs.length > 0 && (
               <div className="flex items-center gap-2">
+                <button 
+                  onClick={clearAllData}
+                  className="px-4 py-2 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white text-[10px] font-black rounded-xl transition-all border border-rose-600/30 active:scale-95 flex items-center gap-2.5"
+                  title="Wipe Local Data"
+                >
+                  <i className="fas fa-trash-can text-xs"></i>
+                  <span>CLEAR</span>
+                </button>
                 <button 
                   onClick={exportToExcel}
                   className="relative overflow-hidden group flex items-center gap-2.5 px-6 py-2 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white text-[10px] font-black rounded-xl transition-all border border-emerald-600/30 active:scale-95"
