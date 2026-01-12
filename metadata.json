@@ -1,0 +1,7 @@
+{
+  "name": "JobFlow Automation Hub",
+  "description": "A professional dashboard for Python-based job scraping automation and real-time job discovery powered by Gemini AI with Google Search integration.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
