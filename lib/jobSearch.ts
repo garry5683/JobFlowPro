@@ -92,7 +92,7 @@ export function extractErrorDetails(error: unknown): ParsedApiError {
       status,
       apiStatus,
       message:
-        "Gemini API access denied. Please verify your API key in Settings > Secrets.",
+        `Gemini API access denied: ${message}`,
     };
   }
 
