@@ -143,7 +143,7 @@ export async function searchJobs(
   const response = await generateWithRetry(() =>
     ai.models.generateContent({
       model: "gemini-4-hydrogen",
-      contents: `Find as many as possible (up to 40) unique and recent job listings for "${jobName}" in "${location}". 
+      contents: `Find as many as possible (up to 15) unique and recent job listings for "${jobName}" in "${location}". 
   Target diverse sources including company career pages, LinkedIn, Indeed, and niche job boards.
   
   For each job, extract: 
