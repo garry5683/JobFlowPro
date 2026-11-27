@@ -4,19 +4,48 @@ import { JobListing } from '../types';
 
 interface JobTableProps {
   jobs: JobListing[];
+  sortKey: string;
+  sortOrder: 'asc' | 'desc';
+  onSort: (key: 'company' | 'title' | 'datePosted') => void;
 }
 
-const JobTable: React.FC<JobTableProps> = ({ jobs }) => {
+const JobTable: React.FC<JobTableProps> = ({ jobs, sortKey, sortOrder, onSort }) => {
+  const renderSortIcon = (key: string) => {
+    if (sortKey !== key) return <i className="fas fa-sort ml-2 opacity-20 group-hover/th:opacity-50"></i>;
+    return <i className={`fas fa-sort-${sortOrder === 'asc' ? 'up' : 'down'} ml-2 text-indigo-400`}></i>;
+  };
+
   return (
     <div className="bg-slate-950/60 backdrop-blur-3xl rounded-[2.5rem] border border-slate-800/80 overflow-hidden shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]">
       <div className="overflow-x-auto scrollbar-hide">
         <table className="w-full text-left border-collapse table-fixed min-w-[1100px]">
           <thead>
             <tr className="bg-slate-950/80 border-b border-slate-800/60">
-              <th className="w-60 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Corporation</th>
-              <th className="w-80 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Assignment</th>
+              <th 
+                className="w-60 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] cursor-pointer hover:bg-slate-900 group/th transition-colors"
+                onClick={() => onSort('company')}
+              >
+                <div className="flex items-center">
+                  Corporation {renderSortIcon('company')}
+                </div>
+              </th>
+              <th 
+                className="w-80 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] cursor-pointer hover:bg-slate-900 group/th transition-colors"
+                onClick={() => onSort('title')}
+              >
+                <div className="flex items-center">
+                  Assignment {renderSortIcon('title')}
+                </div>
+              </th>
               <th className="w-56 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Coordinates</th>
-              <th className="w-36 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Stamp</th>
+              <th 
+                className="w-36 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] cursor-pointer hover:bg-slate-900 group/th transition-colors"
+                onClick={() => onSort('datePosted')}
+              >
+                <div className="flex items-center">
+                  Stamp {renderSortIcon('datePosted')}
+                </div>
+              </th>
               <th className="w-60 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Comm Link</th>
               <th className="w-28 px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] text-right">Gate</th>
             </tr>
@@ -25,10 +54,14 @@ const JobTable: React.FC<JobTableProps> = ({ jobs }) => {
             {jobs.map((job, idx) => (
               <tr key={idx} className="hover:bg-indigo-500/[0.03] transition-all group/row">
                 <td className="px-10 py-6 truncate">
-                  <span className="text-sm font-black text-white group-hover/row:text-indigo-400 transition-colors tracking-tight">{job.company}</span>
+                  <span className={`text-sm font-black tracking-tight transition-colors ${sortKey === 'company' ? 'text-indigo-400' : 'text-white group-hover/row:text-indigo-400'}`}>
+                    {job.company}
+                  </span>
                 </td>
                 <td className="px-10 py-6 truncate">
-                  <span className="text-sm font-bold text-slate-400 group-hover/row:text-slate-100 transition-colors tracking-tight">{job.title}</span>
+                  <span className={`text-sm font-bold tracking-tight transition-colors ${sortKey === 'title' ? 'text-white' : 'text-slate-400 group-hover/row:text-slate-100'}`}>
+                    {job.title}
+                  </span>
                 </td>
                 <td className="px-10 py-6 truncate">
                   <a 
@@ -42,7 +75,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs }) => {
                   </a>
                 </td>
                 <td className="px-10 py-6">
-                  <span className="px-3 py-1 bg-slate-950/50 rounded-xl text-[9px] font-black text-slate-600 uppercase tracking-widest border border-slate-800/60 group-hover/row:border-slate-700 transition-all shadow-inner">
+                  <span className={`px-3 py-1 bg-slate-950/50 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all shadow-inner ${sortKey === 'datePosted' ? 'text-indigo-400 border-indigo-500/30' : 'text-slate-600 border-slate-800/60 group-hover/row:border-slate-700'}`}>
                     {job.datePosted}
                   </span>
                 </td>

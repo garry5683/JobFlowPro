@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { JobListing, GroundingSource } from './types';
 import { searchJobsWithGemini } from './services/gemini';
 import JobCard from './components/JobCard';
@@ -14,8 +14,11 @@ interface LogEntry {
   type: 'info' | 'success' | 'error' | 'export';
 }
 
+type SortKey = 'company' | 'title' | 'datePosted';
+type SortOrder = 'asc' | 'desc';
+
 const App: React.FC = () => {
-  const [jobTitle, setJobTitle] = useState('Senior Python Automation Engineer');
+  const [jobTitle, setJobTitle] = useState('Angular Developer');
   const [location, setLocation] = useState('Remote');
   const [loading, setLoading] = useState(false);
   const [allJobs, setAllJobs] = useState<JobListing[]>([]);
@@ -23,6 +26,9 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  
+  const [sortKey, setSortKey] = useState<SortKey>('datePosted');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   const addLog = (msg: string, type: 'info' | 'success' | 'error' | 'export' = 'info') => {
     const entry: LogEntry = {
@@ -67,17 +73,18 @@ const App: React.FC = () => {
       });
 
     } catch (err) {
-      const errMsg = "Crawler obstructed. Protocol reset required.";
+      const errMsg =
+        err instanceof Error && err.message
+          ? err.message
+          : "Crawler obstructed. Protocol reset required.";
       setError(errMsg);
       addLog(errMsg, 'error');
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   const clearAllData = () => {
-    // Immediate state reset for better UX
     setAllJobs([]);
     setAllSources([]);
     addLog("Memory scrubbed. Database reset complete.", "info");
@@ -89,7 +96,7 @@ const App: React.FC = () => {
     addLog(`Generating secure CSV dump for ${allJobs.length} records...`, 'export');
     
     const headers = ["Company", "Job Title", "Date Posted", "Location", "Email", "Apply Link", "Maps Search URL"];
-    const rows = allJobs.map(j => [
+    const rows = sortedJobs.map(j => [
       `"${(j.company || '').replace(/"/g, '""')}"`,
       `"${(j.title || '').replace(/"/g, '""')}"`,
       `"${(j.datePosted || '').replace(/"/g, '""')}"`,
@@ -103,7 +110,6 @@ const App: React.FC = () => {
     const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     
-    // Construct descriptive filename: jobTitle_location_timestamp.csv
     const sanitize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
     const timestamp = new Date().toISOString().slice(0, 19).replace(/T/, '_').replace(/:/g, '-');
     const fileName = `JobFlow_${sanitize(jobTitle)}_${sanitize(location)}_${timestamp}.csv`;
@@ -116,6 +122,39 @@ const App: React.FC = () => {
     document.body.removeChild(link);
     
     addLog("Export complete. File transmission successful.", "success");
+  };
+
+  // Helper to normalize relative date strings for sorting
+  const getDateWeight = (dateStr: string) => {
+    const s = dateStr.toLowerCase();
+    if (s.includes('today') || s.includes('just now')) return 0;
+    if (s.includes('yesterday') || s.includes('1 day ago')) return 1;
+    const match = s.match(/(\d+)\s+days?\s+ago/);
+    if (match) return parseInt(match[1]);
+    if (s.includes('week')) return 7;
+    if (s.includes('month')) return 30;
+    return 999;
+  };
+
+  const sortedJobs = useMemo(() => {
+    return [...allJobs].sort((a, b) => {
+      let comparison = 0;
+      if (sortKey === 'datePosted') {
+        comparison = getDateWeight(a.datePosted) - getDateWeight(b.datePosted);
+      } else {
+        comparison = (a[sortKey] || '').localeCompare(b[sortKey] || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [allJobs, sortKey, sortOrder]);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortOrder('asc');
+    }
   };
 
   const progress = Math.min((allJobs.length / SCRAPE_GOAL) * 100, 100);
@@ -315,12 +354,24 @@ const App: React.FC = () => {
                   <h3 className="text-2xl font-black text-white leading-none tracking-tighter">{allJobs.length} Unique Datasets</h3>
                 </div>
                 <div className="h-12 w-px bg-slate-800/60 hidden sm:block"></div>
-                <div className="hidden lg:flex flex-col">
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-1.5">Origin Port</span>
-                  <span className="text-xs font-bold text-slate-400 flex items-center gap-2.5">
-                    <i className="fas fa-network-wired text-indigo-500/40"></i>
-                    {jobTitle} <span className="text-slate-800">/</span> {location}
-                  </span>
+                
+                {/* Sorting Select (Compact Futuristic UI) */}
+                <div className="hidden sm:flex flex-col">
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-1.5">Sequence Config</span>
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-950/50 rounded-xl border border-slate-800/60">
+                    {(['datePosted', 'company', 'title'] as SortKey[]).map(key => (
+                      <button
+                        key={key}
+                        onClick={() => toggleSort(key)}
+                        className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${sortKey === key ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:text-slate-400'}`}
+                      >
+                        {key === 'datePosted' ? 'STAMP' : key === 'company' ? 'CORP' : 'TASK'}
+                        {sortKey === key && (
+                          <i className={`fas fa-caret-${sortOrder === 'asc' ? 'up' : 'down'} ml-1.5`}></i>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -342,10 +393,15 @@ const App: React.FC = () => {
 
             <div className="min-h-[500px]">
               {viewMode === 'table' ? (
-                <JobTable jobs={allJobs} />
+                <JobTable 
+                  jobs={sortedJobs} 
+                  sortKey={sortKey} 
+                  sortOrder={sortOrder} 
+                  onSort={toggleSort}
+                />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {allJobs.map((job, idx) => (
+                  {sortedJobs.map((job, idx) => (
                     <JobCard key={idx} job={job} />
                   ))}
                 </div>
