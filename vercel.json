@@ -1,0 +1,8 @@
+{
+  "framework": "vite",
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/jobs/search.ts": { "maxDuration": 60 }
+  }
+}
