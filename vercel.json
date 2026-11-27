@@ -3,6 +3,6 @@
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "functions": {
-    "api/jobs/search.ts": { "maxDuration": 60 }
+    "api/jobs/search.ts": { "maxDuration": 300 }
   }
 }
